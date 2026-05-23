@@ -3,6 +3,7 @@
 import os
 
 from google.adk.agents import LlmAgent
+from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 from google.adk.tools import google_search
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
@@ -29,10 +30,26 @@ _search_agent = LlmAgent(
     tools=[google_search],
 )
 
+# Remote A2A critic — resolves its agent card from the running critic server.
+# The card is fetched lazily on first use, so startup is not blocked even if
+# the critic container is not yet running.
+_critic_agent = RemoteA2aAgent(
+    name="summarizer_critic",
+    agent_card=config.CRITIC_A2A_URL,
+    description=(
+        "Evaluates the quality of a summary and returns structured feedback: "
+        "per-criterion scores, strengths, improvements, and a verdict."
+    ),
+)
+
 summarizer_agent = LlmAgent(
     name="summarizer_agent",
     model=config.DEFAULT_LLM_MODEL,
     description="Agent that summarizes conversations and provides helpful overviews.",
     instruction=SUMMARIZER_AGENT_INSTRUCTION,
-    tools=[_fetch_url_toolset, AgentTool(agent=_search_agent)],
+    tools=[
+        _fetch_url_toolset,
+        AgentTool(agent=_search_agent),
+        AgentTool(agent=_critic_agent),
+    ],
 )
