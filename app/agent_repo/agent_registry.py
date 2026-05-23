@@ -10,6 +10,7 @@ from google.adk.agents import LlmAgent
 
 from app.agent_repo.greeting_agent import greeting_agent
 from app.agent_repo.summarizer_agent import summarizer_agent
+from app.agent_repo.trip_planner_agent import trip_planner_agent
 
 """
 from app.context.artifacts.artifact_tools import save_artifact, load_artifact, list_artifacts
@@ -35,6 +36,12 @@ AGENT_REGISTRY: dict[str, dict] = {
         "label": "Summarizer",
         "description": "Summarizes conversations and provides helpful overviews.",
         "icon": "📝",
+    },
+    "trip_planner_agent": {
+        "agent": trip_planner_agent,
+        "label": "Trip Planner",
+        "description": "Plans complete trips: destination research, flights, itinerary, and budget.",
+        "icon": "✈️",
     },
 }
 
