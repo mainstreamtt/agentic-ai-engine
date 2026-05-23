@@ -7,7 +7,6 @@ To add a new agent:
 """
 
 from google.adk.agents import LlmAgent
-from google.adk.tools import AgentTool
 
 from app.agent_repo.greeting_agent import greeting_agent
 from app.agent_repo.summarizer_agent import summarizer_agent
