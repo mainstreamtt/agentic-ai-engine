@@ -1,0 +1,158 @@
+{
+  "eval_set_id": "summarizer_evals",
+  "name": "Summarizer Agent Evaluation Set",
+  "description": "Tests core summarization quality, critic tool usage, multi-turn follow-up grounding, and edge-case handling for the summarizer agent.",
+  "eval_cases": [
+    {
+      "eval_id": "short_text_tl_dr",
+      "rubrics": [
+        {
+          "rubric_id": "concise_summary",
+          "rubric_content": {
+            "text_property": "The response contains a concise 1-2 sentence summary that accurately captures the main point of the input text without adding invented detail."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        },
+        {
+          "rubric_id": "critic_tool_called",
+          "rubric_content": {
+            "text_property": "The agent calls the summarizer_critic tool after producing its summary."
+          },
+          "type": "TOOL_USE_QUALITY"
+        }
+      ],
+      "conversation": [
+        {
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Python is a high-level, interpreted programming language known for its simple, readable syntax. Created by Guido van Rossum and first released in 1991, Python emphasises code readability and supports multiple programming paradigms including procedural, object-oriented, and functional programming. Its large standard library and active community have made it one of the most popular languages for data science, web development, and automation."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Python is a versatile, readable programming language released in 1991 that supports multiple paradigms and has become a top choice for data science, web development, and automation."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "summarizer_critic",
+                "args": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "multi_turn_follow_up",
+      "rubrics": [
+        {
+          "rubric_id": "accurate_summary",
+          "rubric_content": {
+            "text_property": "The first response summarises the coffee-brewing text accurately and concisely."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        },
+        {
+          "rubric_id": "grounded_follow_up",
+          "rubric_content": {
+            "text_property": "The second response correctly identifies the brewing methods mentioned in the original text (pour-over and French press) without hallucinating additional ones."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        }
+      ],
+      "conversation": [
+        {
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Coffee brewing is both a science and an art. The flavour of the final cup depends on variables such as grind size, water temperature (ideally 90–96 °C), brew time, and the coffee-to-water ratio. Pour-over methods like the V60 offer clean, bright cups by slowly passing hot water through a paper filter, while French press produces a fuller-bodied result by steeping coarsely ground coffee for four minutes before pressing the plunger."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Coffee flavour depends on grind size, water temperature, brew time, and ratio; pour-over methods yield a clean cup while French press produces a fuller-bodied result."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "summarizer_critic",
+                "args": {}
+              }
+            ]
+          }
+        },
+        {
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What specific brewing methods were mentioned?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "The text mentioned two brewing methods: pour-over (specifically the V60) and French press."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "empty_input_greeting",
+      "rubrics": [
+        {
+          "rubric_id": "no_invented_summary",
+          "rubric_content": {
+            "text_property": "The agent does NOT attempt to generate a summary when no text or file has been provided."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        },
+        {
+          "rubric_id": "invites_user_input",
+          "rubric_content": {
+            "text_property": "The response politely invites the user to paste text or upload a file to summarize."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        }
+      ],
+      "conversation": [
+        {
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "hi"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Hi! Paste some text or upload a file (PDF, txt, markdown) and I'll summarize it for you."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
