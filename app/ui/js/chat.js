@@ -430,8 +430,9 @@ function handleServerMessage(data) {
   // partial or final – stream into the agent bubble
   typingEl.classList.remove("visible");
 
-  if (!currentAgentBubble) {
+  if (!currentAgentBubble || currentAgentBubble.dataset.author !== data.author) {
     currentAgentBubble = appendMessage("agent", friendlyAgentName(data.author), data.content, data.author);
+    currentAgentBubble.dataset.author = data.author;
   } else {
     var contentNode = currentAgentBubble.querySelector(".content");
     contentNode.innerHTML = renderMarkdown(data.content);

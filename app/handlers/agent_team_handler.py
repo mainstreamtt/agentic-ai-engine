@@ -5,6 +5,7 @@ from collections.abc import AsyncGenerator
 import structlog
 
 from google.adk.runners import Runner
+from google.adk.sessions import Session
 from google.genai.types import Content, Part
 
 from app import config
@@ -13,6 +14,11 @@ from app.handlers.agent_team_app import create_agent_app
 from app.handlers.session_handler import SessionHandler
 from app.context.artifacts.artifact_service_handler import artifact_service_handler
 from app.context.memory.memory_bank_handler import memory_bank_handler
+from app.context.state.session_inspector import (
+    format_session_report,
+    log_session_events,
+    log_session_state,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -22,6 +28,7 @@ class AgentTeamHandler:
     def __init__(self, session_handler: SessionHandler) -> None:
         self._session_handler = session_handler
         self.session_id: str | None = None
+        self.app_name: str | None = None
         self.runner: Runner | None = None
         self.agent_id: str | None = None
 
@@ -37,6 +44,7 @@ class AgentTeamHandler:
             )
 
             self.session_id = session.id
+            self.app_name = agent_app.name
             self.agent_id = agent_id
 
             runner_kwargs = dict(
@@ -94,6 +102,23 @@ class AgentTeamHandler:
         self.runner = Runner(**runner_kwargs)
         logger.info("Created new session", agent_id=self.agent_id, session_id=self.session_id)
         return self.session_id
+
+    async def get_session(self) -> Session | None:
+        """Fetch the current session object from the session service."""
+        if not self.session_id or not self.app_name:
+            return None
+        return await self._session_handler.service.get_session(
+            app_name=self.app_name,
+            user_id=config.USER_ID,
+            session_id=self.session_id,
+        )
+
+    async def get_session_report(self) -> str:
+        """Return a Markdown session report (state + event history)."""
+        session = await self.get_session()
+        if session is None:
+            return "No active session."
+        return format_session_report(session)
 
     @staticmethod
     def _build_user_content(
@@ -213,4 +238,11 @@ class AgentTeamHandler:
         except Exception as e:
             logger.error("Streaming error", error=str(e))
             yield {"type": "error", "author": "system", "content": str(e)}
+            return
+
+        # Log session state after every response so it is visible in the console
+        session = await self.get_session()
+        if session:
+            log_session_state(session)
+            log_session_events(session)
     

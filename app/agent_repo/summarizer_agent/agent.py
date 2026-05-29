@@ -10,6 +10,7 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParam
 
 from app import config
 from app.agent_repo.summarizer_agent.prompt import SUMMARIZER_AGENT_INSTRUCTION
+from app.context.state.state_tools import save_state, load_state, list_state_keys
 
 # URL of the fetch-url MCP server (overridable via environment variable)
 _MCP_SERVER_URL = os.getenv("FETCH_URL_MCP_SERVER", "http://localhost:3001/sse")
@@ -51,5 +52,8 @@ summarizer_agent = LlmAgent(
         _fetch_url_toolset,
         AgentTool(agent=_search_agent),
         AgentTool(agent=_critic_agent),
+        save_state,
+        load_state,
+        list_state_keys,
     ],
 )

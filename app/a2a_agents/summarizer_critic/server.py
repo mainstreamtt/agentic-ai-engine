@@ -17,6 +17,10 @@ import sys
 os.environ.setdefault("ADK_SUPPRESS_A2A_EXPERIMENTAL_FEATURE_WARNINGS", "true")
 os.environ.setdefault("ADK_SUPPRESS_EXPERIMENTAL_FEATURE_WARNINGS", "true")
 
+# Load .env for local development (no-op when env vars are already set, e.g. Cloud Run)
+from dotenv import load_dotenv
+load_dotenv()
+
 import uvicorn
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 

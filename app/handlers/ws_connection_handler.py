@@ -82,6 +82,11 @@ class WebSocketConnectionHandler:
                     await self._handle_new_session(ws, handler, connection_id)
                     continue
 
+                # ── Session inspection ─────────────────────────────────
+                if action == "inspect_session":
+                    await self._handle_inspect_session(ws, handler)
+                    continue
+
                 # ── Chat message ───────────────────────────────────────
                 await self._handle_message(ws, handler, data, connection_id)
 
@@ -126,6 +131,14 @@ class WebSocketConnectionHandler:
             logger.info("New session created", connection_id=connection_id, session_id=session_id)
         except ValueError as e:
             await ws.send_json({"type": "error", "author": "system", "content": str(e)})
+
+    async def _handle_inspect_session(
+        self,
+        ws: WebSocket,
+        handler: AgentTeamHandler,
+    ) -> None:
+        report = await handler.get_session_report()
+        await ws.send_json({"type": "session_report", "content": report})
 
     async def _handle_message(
         self,
