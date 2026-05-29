@@ -64,6 +64,18 @@ SESSION_BACKEND: str = os.getenv("SESSION_BACKEND", "VERTEX" if IS_CLOUD_RUN els
 RAG_CORPUS: str = os.getenv("RAG_CORPUS", "")
 
 # ---------------------------------------------------------------------------
+# OpenTelemetry settings
+# ---------------------------------------------------------------------------
+
+# Enable/disable OTEL telemetry (traces + metrics → GCP).
+# Defaults to True on Cloud Run, False locally so dev output stays clean.
+OTEL_ENABLED: bool = os.getenv("OTEL_ENABLED", "true" if IS_CLOUD_RUN else "false").lower() == "true"
+
+# Service name shown in Cloud Trace / Cloud Monitoring.
+# Also read by the OTEL SDK from OTEL_SERVICE_NAME env var automatically.
+OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "agentic-ai-engine")
+
+# ---------------------------------------------------------------------------
 # A2A (Agent-to-Agent) settings — external critic agent
 # ---------------------------------------------------------------------------
 

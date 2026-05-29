@@ -8,6 +8,8 @@
 #   - roles/aiplatform.user        (Vertex AI / Gemini)
 #   - roles/storage.objectAdmin    (GCS artifacts)
 #   - roles/iam.serviceAccountTokenCreator  (Vertex AI Session Service)
+#   - roles/cloudtrace.agent       (write traces to Cloud Trace)
+#   - roles/monitoring.metricWriter (write metrics to Cloud Monitoring)
 # ---------------------------------------------------------------------------
 
 apiVersion: serving.knative.dev/v1
@@ -90,6 +92,12 @@ spec:
             # critic to its own Cloud Run service.
             - name: CRITIC_A2A_URL
               value: "http://localhost:8001/.well-known/agent.json"
+
+            # ── OpenTelemetry ─────────────────────────────────────────────────
+            - name: OTEL_ENABLED
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: "agentic-ai-engine"
 
             # ── Logging ───────────────────────────────────────────────────────
             - name: LOG_LEVEL

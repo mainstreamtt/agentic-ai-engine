@@ -6,9 +6,13 @@ import uvicorn
 
 from app.config import configure_logging
 from app.api.fastapi_app import create_app
+from app.context.observability.telemetry import setup_telemetry
 
 # Configure structured logging before anything else
 configure_logging()
+
+# Initialise OTEL before ADK runners are created so every span is captured.
+setup_telemetry()
 
 # Module-level app instance (used by uvicorn in both local and Cloud Run)
 app = create_app()
