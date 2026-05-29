@@ -12,36 +12,33 @@ from app.agent_repo.greeting_agent import greeting_agent
 from app.agent_repo.summarizer_agent import summarizer_agent
 from app.agent_repo.trip_planner_agent import trip_planner_agent
 
-"""
-from app.context.artifacts.artifact_tools import save_artifact, load_artifact, list_artifacts
-
-try:
-    from google.adk.tools import preload_memory, load_memory
-    _MEMORY_TOOLS = {preload_memory, load_memory}
-except ImportError:
-    _MEMORY_TOOLS = set()
-
-_ARTIFACT_FUNCTIONS = {save_artifact, load_artifact, list_artifacts}
-"""
-
 AGENT_REGISTRY: dict[str, dict] = {
     "greeting_agent": {
         "agent": greeting_agent,
         "label": "Welcome",
         "description": "Welcomes students and helps them get started.",
         "icon": "👋",
+        "has_artifacts": False,
+        "has_memory": True,
+        "has_rag": False,
     },
     "summarizer_agent": {
         "agent": summarizer_agent,
         "label": "Summarizer",
         "description": "Summarizes conversations and provides helpful overviews.",
         "icon": "📝",
+        "has_artifacts": True,
+        "has_memory": True,
+        "has_rag": False,
     },
     "trip_planner_agent": {
         "agent": trip_planner_agent,
         "label": "Trip Planner",
         "description": "Plans complete trips: destination research, flights, itinerary, and budget.",
         "icon": "✈️",
+        "has_artifacts": False,
+        "has_memory": False,
+        "has_rag": False,
     },
 }
 
@@ -54,39 +51,18 @@ def get_agent(agent_id: str) -> LlmAgent:
 
 def list_agents() -> list[dict]:
     """Return metadata for all registered agents (for the UI)."""
+    from app.context.memory.memory_bank_handler import memory_bank_handler
+    memory_available = memory_bank_handler.service is not None
+
     return [
         {
             "id": agent_id,
             "label": meta["label"],
             "description": meta["description"],
             "icon": meta["icon"],
-            #"has_artifacts": has_artifact_tools(meta["agent"]),
-            #"has_memory": has_memory_tools(meta["agent"]),
-            #"has_rag": has_rag_tools(meta["agent"]),
+            "has_artifacts": meta.get("has_artifacts", False),
+            "has_memory": meta.get("has_memory", False) and memory_available,
+            "has_rag": meta.get("has_rag", False),
         }
         for agent_id, meta in AGENT_REGISTRY.items()
     ]
-
-# def has_artifact_tools(agent: LlmAgent) -> bool:
-#     """Check whether *agent* has any of the artifact tool functions."""
-#     for tool in agent.tools or []:
-#         func = getattr(tool, "func", tool)
-#         if func in _ARTIFACT_FUNCTIONS:
-#             return True
-#     return False
-#
-#
-# def has_memory_tools(agent: LlmAgent) -> bool:
-#     """Check whether *agent* has any memory tools (preload or load)."""
-#     for tool in agent.tools or []:
-#         if tool in _MEMORY_TOOLS:
-#             return True
-#     return False
-#
-#
-# def has_rag_tools(agent: LlmAgent) -> bool:
-#     """Check whether *agent* has a RAG retrieval AgentTool."""
-#     for tool in agent.tools or []:
-#         if isinstance(tool, AgentTool) and getattr(tool, "name", "") == "rag_retrieval_agent":
-#             return True
-#     return False
