@@ -45,7 +45,21 @@ def _get_or_create_corpus() -> str | None:
                 )
                 return corpus.name
 
-        # Create a new corpus
+        # Switch engine to Serverless mode before creating the corpus.
+        # The default (Spanner) is restricted on new projects in some regions.
+        engine_config_name = (
+            f"projects/{config.GOOGLE_CLOUD_PROJECT}"
+            f"/locations/{config.GOOGLE_CLOUD_LOCATION}"
+            f"/ragEngineConfig"
+        )
+        rag.update_rag_engine_config(
+            rag_engine_config=rag.RagEngineConfig(
+                name=engine_config_name,
+                rag_managed_db_config=rag.RagManagedDbConfig(mode=rag.Serverless()),
+            )
+        )
+        logger.info("RAG engine switched to Serverless mode")
+
         logger.info("No RAG corpus found, creating a new one", display_name=_DISPLAY_NAME)
         corpus = rag.create_corpus(display_name=_DISPLAY_NAME)
         logger.info("Created RAG corpus", corpus_name=corpus.name)

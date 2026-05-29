@@ -29,7 +29,7 @@ AGENT_REGISTRY: dict[str, dict] = {
         "icon": "📝",
         "has_artifacts": True,
         "has_memory": True,
-        "has_rag": False,
+        "has_rag": True,
     },
     "trip_planner_agent": {
         "agent": trip_planner_agent,
@@ -38,7 +38,7 @@ AGENT_REGISTRY: dict[str, dict] = {
         "icon": "✈️",
         "has_artifacts": False,
         "has_memory": False,
-        "has_rag": False,
+        "has_rag": True,
     },
 }
 

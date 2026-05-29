@@ -234,6 +234,10 @@ async function loadRagFiles() {
   try {
     var resp = await fetch("/api/v1/rag/files");
     var data = await resp.json();
+    if (data.error) {
+      ragFileListEl.innerHTML = '<p class="rag-empty">RAG engine unavailable: ' + escapeHtml(data.error) + '</p>';
+      return;
+    }
     renderRagFileList(data.files || []);
   } catch (e) {
     console.error("Failed to load RAG files:", e);

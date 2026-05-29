@@ -36,6 +36,7 @@ from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
 
 from app import config
+from app.context.rag.rag_tools import make_rag_retrieval_tool
 from app.agent_repo.trip_planner_agent.prompt import (
     BUDGET_PRE_ASSESSOR_INSTRUCTION,
     DESTINATION_RESEARCHER_INSTRUCTION,
@@ -49,6 +50,10 @@ from app.agent_repo.trip_planner_agent.prompt import (
 )
 
 _MCP_SERVER_URL = os.getenv("FETCH_URL_MCP_SERVER", "http://localhost:3001/sse")
+
+# RAG retrieval tool – None when corpus is unavailable (graceful degradation)
+_rag_tool = make_rag_retrieval_tool()
+_rag_tools = [_rag_tool] if _rag_tool else []
 
 # ---------------------------------------------------------------------------
 # Stage 1 — Triage: gather user input into session state
@@ -75,7 +80,8 @@ destination_researcher = LlmAgent(
         McpToolset(
             connection_params=SseConnectionParams(url=_MCP_SERVER_URL),
             tool_filter=["fetch_url"],
-        )
+        ),
+        *_rag_tools,
     ],
     output_key="destination_research",
 )
@@ -120,6 +126,7 @@ itinerary_builder = LlmAgent(
     model=config.DEFAULT_LLM_MODEL,
     description="Builds or revises a day-by-day itinerary from all research outputs.",
     instruction=ITINERARY_BUILDER_INSTRUCTION,
+    tools=[*_rag_tools],
     output_key="itinerary",
     before_agent_callback=_seed_loop_state,
 )

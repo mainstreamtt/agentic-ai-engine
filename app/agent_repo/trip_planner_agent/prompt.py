@@ -19,7 +19,12 @@ You are a destination research specialist.
 
 Trip details: {trip_details}
 
-Using the fetch_url tool, retrieve and summarise key information about the destination:
+You have access to two information sources — use both:
+1. **Internal knowledge base** (search_knowledge_base): automatically provides curated
+   destination guides, travel tips, and budget information relevant to your query.
+2. **fetch_url**: retrieve live content from travel websites for up-to-date details.
+
+Research and summarise:
 - Top attractions and must-see sights
 - Best neighbourhoods to stay in
 - Local cuisine highlights
@@ -27,7 +32,8 @@ Using the fetch_url tool, retrieve and summarise key information about the desti
 - Cultural tips and customs
 - Visa / entry requirements if relevant
 
-Fetch at least one reputable travel page (tourism board or travel guide).
+Fetch at least one reputable travel page (tourism board or travel guide) via fetch_url
+to supplement the knowledge base with current information.
 Return a concise, structured summary under clear headings.
 """
 
@@ -72,8 +78,12 @@ Review decision     : {review_decision}
 If review_decision contains "APPROVED" or is empty, the itinerary is already accepted — \
 return the existing itinerary unchanged: {itinerary}
 
-Otherwise, build or revise the day-by-day itinerary addressing all review notes from review_decision:
-- Morning / afternoon / evening breakdown per day
+Otherwise, build or revise the day-by-day itinerary addressing all review notes from review_decision.
+Your search_knowledge_base tool will automatically surface relevant tips, neighbourhood guides,
+and practical advice — use this to enrich the itinerary with curated local knowledge.
+
+Include for each day:
+- Morning / afternoon / evening breakdown
 - Mix of sights, local experiences, and rest
 - Practical tips: best visit times, transport between locations
 - Restaurant suggestions per area

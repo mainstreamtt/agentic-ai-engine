@@ -16,6 +16,7 @@ from app import config
 from app.agent_repo.summarizer_agent.prompt import SUMMARIZER_AGENT_INSTRUCTION
 from app.context.artifacts.artifact_tools import save_artifact, list_artifacts
 from app.context.memory.memory_tools import memorize_session
+from app.context.rag.rag_tools import make_rag_retrieval_tool
 from app.context.state.state_tools import save_state, load_state, list_state_keys
 
 # URL of the fetch-url MCP server (overridable via environment variable)
@@ -49,6 +50,8 @@ _critic_agent = RemoteA2aAgent(
     ),
 )
 
+_rag_tool = make_rag_retrieval_tool()
+
 summarizer_agent = LlmAgent(
     name="summarizer_agent",
     model=config.DEFAULT_LLM_MODEL,
@@ -66,5 +69,6 @@ summarizer_agent = LlmAgent(
         save_artifact,
         list_artifacts,
         load_artifacts,
+        *([_rag_tool] if _rag_tool else []),
     ],
 )
