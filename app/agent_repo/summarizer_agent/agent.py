@@ -10,8 +10,11 @@ from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParam
 
 from google.adk.tools import preload_memory
 
+from google.adk.tools import load_artifacts
+
 from app import config
 from app.agent_repo.summarizer_agent.prompt import SUMMARIZER_AGENT_INSTRUCTION
+from app.context.artifacts.artifact_tools import save_artifact, list_artifacts
 from app.context.memory.memory_tools import memorize_session
 from app.context.state.state_tools import save_state, load_state, list_state_keys
 
@@ -60,5 +63,8 @@ summarizer_agent = LlmAgent(
         list_state_keys,
         memorize_session,
         preload_memory,
+        save_artifact,
+        list_artifacts,
+        load_artifacts,
     ],
 )
