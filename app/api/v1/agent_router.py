@@ -1,5 +1,6 @@
 """Agent listing API – v1."""
 
+import asyncio
 import base64
 
 from fastapi import APIRouter, Query
@@ -24,17 +25,29 @@ async def get_agents() -> dict:
 
 @agent_router.get("/artifacts")
 async def get_artifacts(agent_id: str = Query(..., description="Agent ID")) -> dict:
-    """Return all artifact filenames for the given agent's current session."""
+    """Return all artifact filenames for the given agent across all sessions."""
     app_name = f"{agent_id}_app"
-    session_id = session_handler._agent_session_mapping.get(agent_id)
-    if not session_id:
+    svc = artifact_service_handler.service
+    if not hasattr(svc, "storage_client"):
         return {"artifacts": []}
-    keys = await artifact_service_handler.service.list_artifact_keys(
-        app_name=app_name,
-        user_id=config.USER_ID,
-        session_id=session_id,
-    )
-    return {"artifacts": keys}
+
+    user_prefix = f"{app_name}/{config.USER_ID}/"
+
+    def _list_all() -> list[str]:
+        filenames: set[str] = set()
+        for blob in svc.storage_client.list_blobs(svc.bucket, prefix=user_prefix):
+            relative = blob.name[len(user_prefix):]
+            parts = relative.split("/")
+            if len(parts) >= 3:
+                filename = "/".join(parts[1:-1])
+                # Strip internal user: prefix before returning to the UI
+                if filename.startswith("user:"):
+                    filename = filename[5:]
+                if filename:
+                    filenames.add(filename)
+        return sorted(filenames)
+
+    return {"artifacts": await asyncio.to_thread(_list_all)}
 
 
 @agent_router.get("/artifacts/download")
@@ -42,17 +55,54 @@ async def download_artifact(
     agent_id: str = Query(..., description="Agent ID"),
     filename: str = Query(..., description="Artifact filename"),
 ) -> Response:
-    """Download a single artifact by filename."""
+    """Download the latest version of an artifact, searching across all sessions."""
     app_name = f"{agent_id}_app"
-    session_id = session_handler._agent_session_mapping.get(agent_id)
-    if not session_id:
-        return Response(content="No session found", status_code=404)
+    svc = artifact_service_handler.service
+    if not hasattr(svc, "storage_client"):
+        return Response(content="Artifact service unavailable", status_code=503)
 
-    part = await artifact_service_handler.service.load_artifact(
+    user_prefix = f"{app_name}/{config.USER_ID}/"
+
+    def _find_scope_and_gcs_name() -> tuple[str, str] | None:
+        """Return (scope, gcs_filename) for the latest version of filename."""
+        best_scope: str | None = None
+        best_gcs_name: str | None = None
+        best_version = -1
+        # Match both user-scoped ("user:filename") and legacy session-scoped ("filename")
+        targets = {f"user:{filename}", filename}
+        for blob in svc.storage_client.list_blobs(svc.bucket, prefix=user_prefix):
+            relative = blob.name[len(user_prefix):]
+            parts = relative.split("/")
+            if len(parts) < 3:
+                continue
+            scope = parts[0]
+            candidate = "/".join(parts[1:-1])
+            if candidate not in targets:
+                continue
+            try:
+                version = int(parts[-1])
+                if version > best_version:
+                    best_version = version
+                    best_scope = scope
+                    best_gcs_name = candidate
+            except ValueError:
+                pass
+        if best_scope is None or best_gcs_name is None:
+            return None
+        return best_scope, best_gcs_name
+
+    result = await asyncio.to_thread(_find_scope_and_gcs_name)
+    if result is None:
+        return Response(content="Artifact not found", status_code=404)
+
+    scope, gcs_filename = result
+    # "user" scope means user-namespaced artifact (session_id=None)
+    session_id = None if scope == "user" else scope
+    part = await svc.load_artifact(
         app_name=app_name,
         user_id=config.USER_ID,
         session_id=session_id,
-        filename=filename,
+        filename=gcs_filename,
     )
     if part is None:
         return Response(content="Artifact not found", status_code=404)
