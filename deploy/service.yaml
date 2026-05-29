@@ -1,0 +1,109 @@
+# Cloud Run service declaration.
+#
+# All UPPERCASE_PLACEHOLDER values are substituted automatically by
+# cloudbuild.yaml at deploy time — do not edit them manually.
+#
+# Required IAM roles for the Cloud Run service's runtime identity
+# (grant via `gcloud projects add-iam-policy-binding`):
+#   - roles/aiplatform.user        (Vertex AI / Gemini)
+#   - roles/storage.objectAdmin    (GCS artifacts)
+#   - roles/iam.serviceAccountTokenCreator  (Vertex AI Session Service)
+# ---------------------------------------------------------------------------
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agentic-ai-engine
+  labels:
+    cloud.googleapis.com/location: europe-north1
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scale to zero when idle; allow up to 3 instances under load.
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        # gen2 is required for WebSocket support and longer request timeouts.
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      # Maximum time allowed per request / WebSocket connection (seconds).
+      # Cloud Run gen2 supports up to 3600 s; set high for long-lived WS sessions.
+      timeoutSeconds: 3600
+
+      # Max concurrent requests handled by one container instance.
+      containerConcurrency: 80
+
+      containers:
+        # IMAGE_PLACEHOLDER is substituted by cloudbuild.yaml at deploy time.
+        - image: IMAGE_PLACEHOLDER
+
+          ports:
+            - containerPort: 8080
+
+          resources:
+            limits:
+              # Vertex AI SDK + google-adk are memory-heavy; 2 Gi is a safe floor.
+              cpu: "1"
+              memory: "2Gi"
+
+          env:
+            # ── Google Cloud ──────────────────────────────────────────────────
+            # PROJECT_PLACEHOLDER and GCS_BUCKET_PLACEHOLDER are substituted
+            # by cloudbuild.yaml from the _GCS_BUCKET substitution variable.
+            - name: GOOGLE_CLOUD_PROJECT
+              value: "PROJECT_PLACEHOLDER"
+            - name: GOOGLE_CLOUD_LOCATION
+              value: "europe-north1"
+            - name: GOOGLE_CLOUD_STORAGE_BUCKET
+              value: "GCS_BUCKET_PLACEHOLDER"
+            - name: GOOGLE_GENAI_USE_VERTEXAI
+              value: "TRUE"
+
+            # ── Agent configuration ───────────────────────────────────────────
+            - name: DEFAULT_AGENT_ID
+              value: "greeting_agent"
+            - name: DEFAULT_LLM_MODEL
+              value: "gemini-2.5-flash"
+
+            # ── Session backend ───────────────────────────────────────────────
+            # VERTEX uses VertexAiSessionService so sessions survive restarts /
+            # instance scale-outs.  IN_MEMORY is fine only for local dev.
+            - name: SESSION_BACKEND
+              value: "VERTEX"
+
+            # ── Memory Bank ───────────────────────────────────────────────────
+            # Agent Engine resource ID.  Leave empty to disable memory.
+            # Format: projects/PROJECT/locations/LOCATION/reasoningEngines/ID
+            - name: AGENT_ENGINE_ID
+              value: ""
+            - name: MEMORY_BANK_LOCATION
+              value: "us-central1"
+
+            # ── RAG Engine ────────────────────────────────────────────────────
+            # Full corpus resource name.  Leave empty to auto-create on startup.
+            # Format: projects/PROJECT/locations/LOCATION/ragCorpora/ID
+            - name: RAG_CORPUS
+              value: ""
+
+            # ── Critic A2A agent ──────────────────────────────────────────────
+            # URL of the critic agent's A2A card.  Update if you deploy the
+            # critic to its own Cloud Run service.
+            - name: CRITIC_A2A_URL
+              value: "http://localhost:8001/.well-known/agent.json"
+
+            # ── Logging ───────────────────────────────────────────────────────
+            - name: LOG_LEVEL
+              value: "INFO"
+
+            # ── Secrets (example) ─────────────────────────────────────────────
+            # For sensitive values (API keys, engine IDs) prefer Secret Manager:
+            #
+            # - name: AGENT_ENGINE_ID
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: agent-engine-id   # Secret Manager secret name
+            #       key: latest
+
+  traffic:
+    - percent: 100
+      latestRevision: true
