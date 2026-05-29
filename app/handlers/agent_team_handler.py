@@ -245,4 +245,10 @@ class AgentTeamHandler:
         if session:
             log_session_state(session)
             log_session_events(session)
+            if memory_bank_handler.service is not None:
+                try:
+                    await memory_bank_handler.service.add_session_to_memory(session)
+                    logger.info("Session memorized", session_id=self.session_id)
+                except Exception:
+                    logger.warning("Failed to memorize session", exc_info=True)
     

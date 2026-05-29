@@ -8,8 +8,11 @@ from google.adk.tools import google_search
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
 
+from google.adk.tools import preload_memory
+
 from app import config
 from app.agent_repo.summarizer_agent.prompt import SUMMARIZER_AGENT_INSTRUCTION
+from app.context.memory.memory_tools import memorize_session
 from app.context.state.state_tools import save_state, load_state, list_state_keys
 
 # URL of the fetch-url MCP server (overridable via environment variable)
@@ -55,5 +58,7 @@ summarizer_agent = LlmAgent(
         save_state,
         load_state,
         list_state_keys,
+        memorize_session,
+        preload_memory,
     ],
 )

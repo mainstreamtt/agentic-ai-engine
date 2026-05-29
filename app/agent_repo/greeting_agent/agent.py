@@ -1,9 +1,11 @@
 """Greeting agent – welcomes students and helps them get started."""
 
 from google.adk.agents import LlmAgent
+from google.adk.tools import preload_memory
 
 from app import config
 from app.agent_repo.greeting_agent.prompt import GREETING_AGENT_INSTRUCTION
+from app.context.memory.memory_tools import memorize_session
 
 
 greeting_agent = LlmAgent(
@@ -11,4 +13,5 @@ greeting_agent = LlmAgent(
     model=config.DEFAULT_LLM_MODEL,
     description="Agent that greets users and answers basic questions about itself.",
     instruction=GREETING_AGENT_INSTRUCTION,
+    tools=[memorize_session, preload_memory],
 )
